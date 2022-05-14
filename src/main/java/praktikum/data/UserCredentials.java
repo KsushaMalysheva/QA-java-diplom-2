@@ -1,34 +1,20 @@
 package praktikum.data;
+import lombok.Builder;
+import lombok.Data;
 
-import com.github.javafaker.Faker;
-
+@Data
+@Builder
 public class UserCredentials {
 
-    public String email;
-    public String password;
-
-    public UserCredentials() {
-
-    }
+        private String email;
+        private String password;
 
     public UserCredentials(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
+            this.email = email;
+            this.password = password;
+        }
 
-    public UserCredentials setEmail(String email) {
-        this.email = email;
-        return this;
+        public static UserCredentials from (User user){
+            return new UserCredentials(user.getEmail(), user.getPassword());
+        }
     }
-
-    public UserCredentials setPassword(String password) {
-        this.password = password;
-        return this;
-    }
-
-    public static UserCredentials getWithDoNotReallyEmailAndPassword(DataForCreateNewUser user) {
-        Faker faker = new Faker();
-        return new UserCredentials().setEmail(faker.internet().emailAddress())
-                .setPassword(faker.internet().password(6,10));
-    }
-}

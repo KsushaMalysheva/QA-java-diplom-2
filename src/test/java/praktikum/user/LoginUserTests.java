@@ -3,93 +3,120 @@ package praktikum.user;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.client.UserClient;
-import praktikum.data.DataForCreateNewUser;
+import praktikum.data.User;
 import praktikum.data.UserCredentials;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 public class LoginUserTests {
 
-    private UserClient userClient;
-    private DataForCreateNewUser user;
-    private String accessToken;
+        private UserClient userClient;
+        private User user;
+        private String accessToken;
 
-    @Before
-    public void setUp() {
-        userClient = new UserClient();
-        //Сгенерировать случайные данные полей
-        user = DataForCreateNewUser.getRandom();
+        @Before
+        public void setUp() {
+            userClient = new UserClient();
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+            accessToken = response.extract().path("accessToken").toString().substring(7);
+        }
+
+        @After
+        public void tearDown() {
+            userClient.deletingUser(accessToken, user);
+        }
+
+        @Test
+        @DisplayName("Validation test")
+        @Description("Basic validation test with credentials {email and password}")
+        public void validationTest() {
+            ValidatableResponse response = userClient.validation(UserCredentials.from(user));
+
+            int statusCode = response.extract().statusCode();
+            boolean isValidated = response.extract().path("success");
+            assertEquals("Incorrect status code",200, statusCode);
+            assertTrue("User not validated", isValidated);
+        }
+
+        @Test
+        @DisplayName("Validation test with incorrect credential {email}")
+        @Description("Basic validation test with incorrect email")
+        public void validationWithWrongEmailTest() {
+            UserCredentials credentials = UserCredentials.builder()
+                    .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
+                    .password(user.getPassword())
+                    .build();
+
+            ValidatableResponse response = userClient.validation(credentials);
+
+            int statusCode = response.extract().statusCode();
+            boolean isNotValidated = response.extract().path("success");
+            String message = response.extract().path("message");
+            assertEquals("Incorrect status code",401, statusCode);
+            assertFalse("User was validated",isNotValidated);
+            assertEquals("Error message doesn't match","email or password are incorrect", message);
+        }
+
+        @Test
+        @DisplayName("Validation test with incorrect credential {password}")
+        @Description("Basic validation test with incorrect password")
+        public void validationWithWrongPasswordTest() {
+            UserCredentials credentials = UserCredentials.builder()
+                    .email(user.getEmail())
+                    .password(RandomStringUtils.randomAlphabetic(10))
+                    .build();
+
+            ValidatableResponse response = userClient.validation(credentials);
+
+            int statusCode = response.extract().statusCode();
+            boolean isNotValidated = response.extract().path("success");
+            String message = response.extract().path("message");
+            assertEquals("Incorrect status code",401, statusCode);
+            assertFalse("User was validated",isNotValidated);
+            assertEquals("Error message doesn't match","email or password are incorrect", message);
+        }
+
+        @Test
+        @DisplayName("Validation test without credential {email}")
+        @Description("Basic validation test without email")
+        public void validationWithoutEmailTest() {
+            UserCredentials credentials = UserCredentials.builder()
+                    .email(null)
+                    .password(user.getPassword())
+                    .build();
+
+            ValidatableResponse response = userClient.validation(credentials);
+
+            int statusCode = response.extract().statusCode();
+            boolean isNotValidated = response.extract().path("success");
+            String message = response.extract().path("message");
+            assertEquals("Incorrect status code",401, statusCode);
+            assertFalse("User was validated",isNotValidated);
+            assertEquals("Error message doesn't match","email or password are incorrect", message);
+        }
+
+        @Test
+        @DisplayName("Validation test without credential {password}")
+        @Description("Basic validation test without password")
+        public void validationWithoutPasswordTest() {
+            UserCredentials credentials = UserCredentials.builder()
+                    .email(user.getEmail())
+                    .password(null)
+                    .build();
+
+            ValidatableResponse response = userClient.validation(credentials);
+
+            int statusCode = response.extract().statusCode();
+            boolean isNotValidated = response.extract().path("success");
+            String message = response.extract().path("message");
+            assertEquals("Incorrect status code",401, statusCode);
+            assertFalse("User was validated",isNotValidated);
+            assertEquals("Error message doesn't match","email or password are incorrect", message);
+        }
     }
-
-    @After
-    public void tearDown() {
-        //Удалить пользователя
-        userClient.delete(accessToken);
-    }
-
-    @Test
-    @DisplayName("Successful authorization by user")
-    @Description("User authorization with all fields. Email and password")
-    public void successfulAuthorization() {
-
-        //Создать пользователя
-        userClient.create(user);
-
-        //Авторизоваться пользователем
-        ValidatableResponse response = userClient.login(new UserCredentials(user.email, user.password));
-
-        //Получить статус код запроса
-        int statusCodeResponse = response.extract().statusCode();
-        //Получить значение ключа "success"
-        boolean isUserLogged = response.extract().path("success");
-        //Получить access токен
-        accessToken = response.extract().path("accessToken");
-        //Получить refresh токен
-        String refreshToken = response.extract().path("refreshToken");
-        //Получить значение ключа "email"
-        String actualEmail = response.extract().path("user.email");
-        //Получить значение ключа "name"
-        String actualName = response.extract().path("user.name");
-
-        //Проверить статус код
-        assertThat(statusCodeResponse, equalTo(200));
-        //Проверить значение ключа "success"
-        assertTrue("Пользователь не авторизовался", isUserLogged);
-        //Проверить access токен
-        assertNotNull(accessToken);
-        //Проверить refresh токен
-        assertNotNull(refreshToken);
-        //Проверить значение ключа "email"
-        assertThat("Пользователь авторизовался под другим email", actualEmail, equalTo(user.email));
-        //Проверить значение ключа "name"
-        assertThat("Пользователь авторизовался под другим name", actualName, equalTo(user.name));
-    }
-
-    @Test
-    @DisplayName("Unsuccessful authorization by user")
-    @Description("User authorization with do not really email and password fields")
-    public void unsuccessfulAuthorizationWithDoNotReallyEmailAndPassword() {
-
-        //Авторизоваться с данными незарегистрированного пользователя
-        ValidatableResponse response = userClient.login(UserCredentials.getWithDoNotReallyEmailAndPassword(user));
-
-        //Получить статус код запроса
-        int statusCodeResponse = response.extract().statusCode();
-        //Получить значение ключа "success"
-        boolean isUserUnLogged = response.extract().path("success");
-        //Получить значение ключа "message"
-        String message = response.extract().path("message");
-
-        //Проверить статус код
-        assertThat(statusCodeResponse, equalTo(401));
-        //Проверить значение ключа "success"
-        assertFalse(isUserUnLogged);
-        //Проверить значение ключа "message"
-        assertThat(message, equalTo("email or password are incorrect"));
-    }
-}

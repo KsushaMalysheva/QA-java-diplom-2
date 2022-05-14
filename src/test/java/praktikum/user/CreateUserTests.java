@@ -3,89 +3,144 @@ package praktikum.user;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import praktikum.client.UserClient;
-import praktikum.data.DataForCreateNewUser;
+import praktikum.data.User;
 import praktikum.data.UserCredentials;
 
-import static org.hamcrest.Matchers.*;
+import java.net.HttpURLConnection;
+
 import static org.junit.Assert.*;
 
 public class CreateUserTests {
 
-    private UserClient userClient;
-    private DataForCreateNewUser user;
-    private String accessToken;
+        private UserClient userClient;
+        private String accessToken;
+        private User user;
 
-    @Before
-    public void setUp() {
-        userClient = new UserClient();
-        //Сгенерировать случайные данные полей
-        user = DataForCreateNewUser.getRandom();
+        @Before
+        public void setup() {
+            userClient = new UserClient();
+        }
+
+        @After
+        public void tearDown() {
+            if (accessToken != null) {
+                userClient.deletingUser(accessToken, user);
+            }
+        }
+
+        @Test
+        @DisplayName("Creating user")
+        @Description("Basic test user is created")
+        public void creatingUserTest() {
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+            accessToken = response.extract().path("accessToken").toString().substring(7);
+
+            boolean isCreated = response.extract().path("success");
+            int statusCode = response.extract().statusCode();
+            assertTrue("User not be created", isCreated);
+            assertEquals("Incorrect status code", 200, statusCode);
+        }
+
+        @Test
+        @DisplayName("Creating user")
+        @Description("Basic test user is deleted")
+        public void deletingUserTest() {
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+
+            accessToken = response.extract().path("accessToken").toString().substring(7);
+            ValidatableResponse deleteResponse = userClient.deletingUser(accessToken, user);
+
+            int statusCode = deleteResponse.extract().statusCode();
+            boolean isDeleted = deleteResponse.extract().path("success");
+            String message = deleteResponse.extract().path("message");
+            String userEmail = response.extract().path("user.email");
+            String userName = response.extract().path("user.name");
+
+            assertEquals("Incorrect status code",202, statusCode);
+            assertTrue("User not be deleted",isDeleted);
+            assertEquals("Error message doesn't match","User successfully removed", message);
+            assertEquals("User email doesn't match",user.getEmail().toLowerCase(), userEmail);
+            assertEquals("User name doesn't match",user.getName(), userName);
+        }
+
+        @Test
+        @DisplayName("Creating second user")
+        @Description("Test for can't be created second user")
+        public void secondUserTest() {
+            user = User.getRandom();
+            userClient.userCreate(user);
+
+            ValidatableResponse secondUser = userClient.userCreate(user);
+
+            boolean isNotCreated = secondUser.extract().path("success");
+            String message = secondUser.extract().path("message");
+            int statusCode = secondUser.extract().statusCode();
+            assertFalse("Second user was created",isNotCreated);
+            assertEquals("Error message doesn't match","User already exists", message);
+            assertEquals("Incorrect status code",403, statusCode);
+        }
+
+        @Test
+        @DisplayName("Creating user without credentials {email}")
+        @Description("Test for can't be created user without email")
+        public void creatingWithoutEmailTest() {
+            user = User.builder()
+                    .password(RandomStringUtils.randomAlphabetic(10))
+                    .name(RandomStringUtils.randomAlphabetic(10))
+                    .build();
+
+            ValidatableResponse response = userClient.userCreate(user);
+
+            boolean isNotCreated = response.extract().path("success");
+            String message = response.extract().path("message");
+            int statusCode = response.extract().statusCode();
+            assertFalse("User be created", isNotCreated);
+            assertEquals("Error message doesn't match","Email, password and name are required fields", message);
+            assertEquals("Incorrect status code",403, statusCode);
+        }
+
+        @Test
+        @DisplayName("Creating user without credentials {password}")
+        @Description("Test for can't be created user without password")
+        public void creatingWithoutPasswordTest() {
+            user = User.builder()
+                    .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
+                    .name(RandomStringUtils.randomAlphabetic(10))
+                    .build();
+
+            ValidatableResponse response = userClient.userCreate(user);
+
+            boolean isNotCreated = response.extract().path("success");
+            String message = response.extract().path("message");
+            int statusCode = response.extract().statusCode();
+            assertFalse("User be created", isNotCreated);
+            assertEquals("Error message doesn't match","Email, password and name are required fields", message);
+            assertEquals("Incorrect status code",403, statusCode);
+        }
+
+        @Test
+        @DisplayName("Creating user without credentials {name}")
+        @Description("Test for can't be created user without name")
+        public void creatingWithoutNameTest() {
+            user = User.builder()
+                    .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
+                    .password(RandomStringUtils.randomAlphabetic(10))
+                    .build();
+
+            ValidatableResponse response = userClient.userCreate(user);
+
+            boolean isNotCreated = response.extract().path("success");
+            String message = response.extract().path("message");
+            int statusCode = response.extract().statusCode();
+            assertFalse("User be created",isNotCreated);
+            assertEquals("Error message doesn't match","Email, password and name are required fields", message);
+            assertEquals("Incorrect status code",403, statusCode);
+        }
     }
-
-    @After
-    public void tearDown() {
-        //Удалить пользователя
-        userClient.delete(accessToken);
-    }
-
-    @Test
-    @DisplayName("Сheck the successful creation of a user")
-    @Description("Creating a user with all fields. Email, password and firstname")
-    public void successfulCreateUser() {
-
-        //Создать пользователя
-        ValidatableResponse response = userClient.create(user);
-
-        //Получить статус кода запроса
-        int statusCodePositiveResponseCreate = response.extract().statusCode();
-        //Получить значение ключа "success"
-        boolean isUserCreated = response.extract().path("success");
-
-        //Авторизоваться пользователем
-        ValidatableResponse responseUserLogged = userClient.login(new UserCredentials(user.email, user.password));
-
-        //Получить refresh токен
-        String refreshToken = responseUserLogged.extract().path("refreshToken");
-        //Получить access токен
-        accessToken = responseUserLogged.extract().path("accessToken");
-
-        //Проверить статус код
-        assertThat(statusCodePositiveResponseCreate, equalTo(200));
-        //Проверить создание пользователя
-        assertTrue("User is not created", isUserCreated);
-        //Проверить access токен
-        assertNotNull("Пустой accessToken", accessToken);
-        //Проверить refresh токен
-        assertNotNull("Пустой refreshToken", refreshToken);
-    }
-
-    @Test
-    @DisplayName("Сheck the unsuccessful creation of a user")
-    @Description("Creating a user with a email, password and firstname twice")
-    public void unsuccessfulCreateTwoIdenticalUsers() {
-
-        //Создать пользователя
-        userClient.create(user);
-
-        //Повторно cоздать пользователя
-        ValidatableResponse response = userClient.create(user);
-
-        //Получить статус кода запроса
-        int statusCodeNegativeResponse = response.extract().statusCode();
-        //Получить значение ключа "success"
-        boolean isSuccess = response.extract().path("success");
-        //Получить значение ключа "message"
-        String message = response.extract().path("message");
-
-        //Проверить статус код
-        assertThat(statusCodeNegativeResponse, equalTo(403));
-        //Проверить значение ключа "success"
-        assertFalse(isSuccess);
-        //Проверить значение ключа "message"
-        assertThat("Создан ещё один пользователь с одинаковыми данными", message, (equalTo("User already exists")));
-    }
-}

@@ -6,10 +6,15 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import praktikum.client.Order;
 import praktikum.client.OrderClient;
 import praktikum.client.UserClient;
-import praktikum.data.DataForCreateNewUser;
+import praktikum.data.User;
 import praktikum.data.IngredientsForCreateNewBurger;
+
+import java.net.HttpURLConnection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -17,28 +22,27 @@ import static org.junit.Assert.*;
 
 public class GetOrderUserTests {
 
-    private UserClient userClient;
-    private DataForCreateNewUser user;
-    String accessToken;
-    private IngredientsForCreateNewBurger ingredientsForCreateNewBurger;
     private OrderClient orderClient;
+    private UserClient userClient;
+    private User user;
+    private String accessToken;
+    private ValidatableResponse responseOrder;
+    private String firstIngredient;
 
     @Before
     public void setUp() {
-        userClient = new UserClient();
-        //Сгенерировать случайные данные полей
-        user = DataForCreateNewUser.getRandom();
         orderClient = new OrderClient();
-        //Сгенерировать случайный бургер
-        ingredientsForCreateNewBurger = IngredientsForCreateNewBurger.getRandom();
+        userClient = new UserClient();
+        user = User.getRandom();
+        responseOrder = userClient.userCreate(user);
+        accessToken = responseOrder.extract().path("accessToken").toString().substring(7);
+        ValidatableResponse ingredients = orderClient.gettingAllIngredients();
+        firstIngredient = ingredients.extract().path("data[1]._id");
     }
 
     @After
     public void tearDown() {
-        //Удалить пользователя
-        if (accessToken != "") {
-            userClient.delete(accessToken);
-        }
+        userClient.deletingUser(accessToken, user);
     }
 
     @Test
@@ -46,24 +50,36 @@ public class GetOrderUserTests {
     @Description("Successfully get orders from a unique logged in user")
     public void successfulGetOrdersWithLogin() {
 
-        //Создать пользователя
-        ValidatableResponse response = userClient.create(user);
-
-        //Получить access токен
-        accessToken = response.extract().path("accessToken");
-
+        Order order = new Order();
+        order.setIngredients(Collections.singletonList(firstIngredient));
         //Получить заказ пользователя
         ValidatableResponse responseOrder = orderClient.userOrderInfo(accessToken);
-
         //Получить статус кода запроса
         int statusCodeResponseOrder = responseOrder.extract().statusCode();
         //Получить значение ключа "success"
         boolean isGetOrders = responseOrder.extract().path("success");
+        List<String> orders = responseOrder.extract().path("orders");
+        assertEquals("Incorrect status code", 200, statusCodeResponseOrder);
+        assertTrue("Orders wasn't get", isGetOrders);
+        assertNotNull("Orders is empty", orders);
+    }
 
-        //Проверить статус код
-        assertThat(statusCodeResponseOrder, equalTo(200));
-        //Проверить успешность получения заказов
-        assertTrue("Заказы не получены", isGetOrders);
+    @Test
+    @DisplayName("Get list all orders")
+    public void getListOrders () {
+
+        ValidatableResponse responseOrder = orderClient.getListOrders();
+
+        int statusCodeResponseOrder = responseOrder.extract().statusCode();
+        List<Object> orders = responseOrder.extract().jsonPath().getList("orders");
+        int sizeListOrders = orders.size();
+
+        List<Object> listOfIdOrders = responseOrder.extract().jsonPath().getJsonObject("orders._id");
+        int sizeListOfIdOrders = listOfIdOrders.size();
+
+        assertEquals("Incorrect status code", 200, statusCodeResponseOrder);
+        assertFalse(orders.isEmpty());
+        assertEquals(sizeListOfIdOrders, sizeListOrders);
     }
 
     @Test
@@ -75,17 +91,11 @@ public class GetOrderUserTests {
         ValidatableResponse responseOrder = orderClient.userOrderInfoWithoutToken();
 
         //Получить статус кода запроса
-        int statusCodeResponseOrder = responseOrder.extract().statusCode();
-        //Получить значение ключа "success"
-        boolean isGetOrders = responseOrder.extract().path("success");
-        //Получить значение ключа "message"
+        int statusCode = responseOrder.extract().statusCode();
+        boolean isNotGeted = responseOrder.extract().path("success");
         String message = responseOrder.extract().path("message");
-
-        //Проверить статус код
-        assertThat(statusCodeResponseOrder, equalTo(401));
-        //Проверить успешность получения заказов
-        assertFalse("Операция успешна", isGetOrders);
-        //Проверить сообщение
-        assertThat(message, equalTo("You should be authorised"));
+        assertEquals("Incorrect status code", 401, statusCode);
+        assertFalse("Orders wasn't get", isNotGeted);
+        assertEquals("Error message not matches", "You should be authorised", message);
     }
 }
