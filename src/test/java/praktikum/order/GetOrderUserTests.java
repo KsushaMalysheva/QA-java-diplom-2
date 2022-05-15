@@ -10,14 +10,8 @@ import praktikum.client.Order;
 import praktikum.client.OrderClient;
 import praktikum.client.UserClient;
 import praktikum.data.User;
-import praktikum.data.IngredientsForCreateNewBurger;
-
-import java.net.HttpURLConnection;
 import java.util.Collections;
 import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
 
 public class GetOrderUserTests {
@@ -49,7 +43,6 @@ public class GetOrderUserTests {
     @DisplayName("Get orders from a unique logged in user")
     @Description("Successfully get orders from a unique logged in user")
     public void successfulGetOrdersWithLogin() {
-
         Order order = new Order();
         order.setIngredients(Collections.singletonList(firstIngredient));
         //Получить заказ пользователя
@@ -67,16 +60,12 @@ public class GetOrderUserTests {
     @Test
     @DisplayName("Get list all orders")
     public void getListOrders () {
-
         ValidatableResponse responseOrder = orderClient.getListOrders();
-
         int statusCodeResponseOrder = responseOrder.extract().statusCode();
         List<Object> orders = responseOrder.extract().jsonPath().getList("orders");
         int sizeListOrders = orders.size();
-
         List<Object> listOfIdOrders = responseOrder.extract().jsonPath().getJsonObject("orders._id");
         int sizeListOfIdOrders = listOfIdOrders.size();
-
         assertEquals("Incorrect status code", 200, statusCodeResponseOrder);
         assertFalse(orders.isEmpty());
         assertEquals(sizeListOfIdOrders, sizeListOrders);
@@ -86,10 +75,8 @@ public class GetOrderUserTests {
     @DisplayName("Get orders from a unique unregistered user")
     @Description("Unsuccessfully get orders from a unique unregistered user")
     public void unsuccessfulGetOrdersWithoutLogin() {
-
         //Получить заказ
         ValidatableResponse responseOrder = orderClient.userOrderInfoWithoutToken();
-
         //Получить статус кода запроса
         int statusCode = responseOrder.extract().statusCode();
         boolean isNotGeted = responseOrder.extract().path("success");

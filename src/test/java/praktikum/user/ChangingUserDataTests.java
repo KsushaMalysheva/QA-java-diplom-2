@@ -9,12 +9,9 @@ import org.junit.Test;
 import praktikum.client.UserClient;
 import praktikum.data.User;
 import praktikum.data.UserCredentials;
-
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
 
 public class ChangingUserDataTests {
-
         private User user;
         private UserClient userClient;
         private ValidatableResponse response;
@@ -39,12 +36,10 @@ public class ChangingUserDataTests {
         @Description("Getting information about user")
         public void getUserDataTest() {
             userClient.gettingInformationUser(accessToken);
-
             int statusCode = response.extract().statusCode();
             boolean isGeted= response.extract().path("success");
             String userEmail = response.extract().path("user.email");
             String userName = response.extract().path("user.name");
-
             assertEquals("Incorrect status code",200, statusCode);
             assertTrue("Information doesn't get",isGeted);
             assertEquals("User email doesn't match", user.getEmail(), userEmail);
@@ -56,11 +51,9 @@ public class ChangingUserDataTests {
         @Description("Test for change information about user without authorization")
         public void changeInformationUserWithoutAuthorizationTest() {
             response = userClient.changeInformationUserWithoutToken(user);
-
             int statusCode = response.extract().statusCode();
             boolean isNotChanged = response.extract().path("success");
             String message = response.extract().path("message");
-
             assertEquals("Incorrect status code",401, statusCode);
             assertFalse("Information was changed", isNotChanged);
             assertEquals("Error message doesn't match","You should be authorised", message);
@@ -71,19 +64,15 @@ public class ChangingUserDataTests {
         @Description("Test for change information about user with authorization {email}")
         public void changeEmailWithAuthorizationTest() {
             String newEmail = User.getRandomEmail();
-
             User newUser = User.builder()
                     .email(newEmail)
                     .password(user.getPassword())
                     .name(user.getName())
                     .build();
-
             userClient.changeInformationUserWithToken(accessToken, newUser);
-
             int statusCode = response.extract().statusCode();
             boolean isChanged= response.extract().path("success");
             String userEmail = response.extract().path("user.email");
-
             assertEquals("Incorrect status code", 200, statusCode);
             assertTrue("Information wasn't changed", isChanged);
             assertEquals("Email not changed", user.getEmail().toLowerCase(), userEmail);
@@ -94,15 +83,12 @@ public class ChangingUserDataTests {
         @Description("Test for change information about user with authorization {password}")
         public void changePasswordWithAuthorizationTest() {
             String newPassword = User.getRandomData();
-
             User newUser = User.builder()
                     .email(user.getEmail())
                     .password(newPassword)
                     .name(user.getName())
                     .build();
-
             userClient.changeInformationUserWithToken(accessToken, newUser);
-
             int statusCode = response.extract().statusCode();
             boolean isChanged= response.extract().path("success");
             String userName = response.extract().path("user.name");
@@ -116,15 +102,12 @@ public class ChangingUserDataTests {
         @Description("Test for change information about user with authorization {name}")
         public void changeNameWithAuthorizationTest() {
             String newName = User.getRandomData();
-
             User newUser = User.builder()
                     .email(user.getEmail())
                     .password(user.getPassword())
                     .name(newName)
                     .build();
-
             userClient.changeInformationUserWithToken(accessToken, newUser);
-
             int statusCode = response.extract().statusCode();
             boolean isChanged= response.extract().path("success");
             String userName = response.extract().path("user.name");
@@ -138,15 +121,12 @@ public class ChangingUserDataTests {
         @Description("Test for change information about user with authorization {exactly the same email}")
         public void changeEmailOnExactlyWithAuthorizationTest() {
             String exactlyUserEmail = user.getEmail();
-
             User newUser = User.builder()
                     .email(exactlyUserEmail)
                     .password(user.getPassword())
                     .name(user.getName())
                     .build();
-
             userClient.changeInformationUserWithToken(accessToken, newUser);
-
             int statusCode = response.extract().statusCode();
             boolean isNotChanged = response.extract().path("success");
             String message = response.extract().path("message");

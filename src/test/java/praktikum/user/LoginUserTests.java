@@ -10,7 +10,6 @@ import org.junit.Test;
 import praktikum.client.UserClient;
 import praktikum.data.User;
 import praktikum.data.UserCredentials;
-
 import static org.junit.Assert.*;
 
 public class LoginUserTests {
@@ -37,7 +36,6 @@ public class LoginUserTests {
         @Description("Basic validation test with credentials {email and password}")
         public void validationTest() {
             ValidatableResponse response = userClient.validation(UserCredentials.from(user));
-
             int statusCode = response.extract().statusCode();
             boolean isValidated = response.extract().path("success");
             assertEquals("Incorrect status code",200, statusCode);
@@ -52,9 +50,7 @@ public class LoginUserTests {
                     .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
                     .password(user.getPassword())
                     .build();
-
             ValidatableResponse response = userClient.validation(credentials);
-
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -71,9 +67,7 @@ public class LoginUserTests {
                     .email(user.getEmail())
                     .password(RandomStringUtils.randomAlphabetic(10))
                     .build();
-
             ValidatableResponse response = userClient.validation(credentials);
-
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -90,9 +84,7 @@ public class LoginUserTests {
                     .email(null)
                     .password(user.getPassword())
                     .build();
-
             ValidatableResponse response = userClient.validation(credentials);
-
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -109,9 +101,7 @@ public class LoginUserTests {
                     .email(user.getEmail())
                     .password(null)
                     .build();
-
             ValidatableResponse response = userClient.validation(credentials);
-
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");

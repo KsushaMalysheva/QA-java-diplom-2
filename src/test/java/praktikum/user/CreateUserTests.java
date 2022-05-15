@@ -9,10 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import praktikum.client.UserClient;
 import praktikum.data.User;
-import praktikum.data.UserCredentials;
-
-import java.net.HttpURLConnection;
-
 import static org.junit.Assert.*;
 
 public class CreateUserTests {
