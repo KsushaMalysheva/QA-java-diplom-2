@@ -6,20 +6,23 @@ import io.restassured.response.ValidatableResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import praktikum.BaseTest;
 import praktikum.client.UserClient;
 import praktikum.data.User;
 import static org.junit.Assert.*;
 
-public class CreateUserTests {
+public class CreateUserTests extends BaseTest {
 
-        private UserClient userClient;
-        private String accessToken;
-        private User user;
+    private static UserClient userClient;
+    private static String accessToken;
+    private static User user;
 
-        @Before
-        public void setup() {
-            userClient = new UserClient();
+    @BeforeClass
+    public static void SetUp() {
+        userClient = new UserClient();
         }
 
         @After
@@ -36,7 +39,6 @@ public class CreateUserTests {
             user = User.getRandom();
             ValidatableResponse response = userClient.userCreate(user);
             accessToken = response.extract().path("accessToken").toString().substring(7);
-
             boolean isCreated = response.extract().path("success");
             int statusCode = response.extract().statusCode();
             assertTrue("User not be created", isCreated);
@@ -49,16 +51,13 @@ public class CreateUserTests {
         public void deletingUserTest() {
             user = User.getRandom();
             ValidatableResponse response = userClient.userCreate(user);
-
             accessToken = response.extract().path("accessToken").toString().substring(7);
             ValidatableResponse deleteResponse = userClient.deletingUser(accessToken, user);
-
             int statusCode = deleteResponse.extract().statusCode();
             boolean isDeleted = deleteResponse.extract().path("success");
             String message = deleteResponse.extract().path("message");
             String userEmail = response.extract().path("user.email");
             String userName = response.extract().path("user.name");
-
             assertEquals("Incorrect status code",202, statusCode);
             assertTrue("User not be deleted",isDeleted);
             assertEquals("Error message doesn't match","User successfully removed", message);
@@ -72,9 +71,7 @@ public class CreateUserTests {
         public void secondUserTest() {
             user = User.getRandom();
             userClient.userCreate(user);
-
             ValidatableResponse secondUser = userClient.userCreate(user);
-
             boolean isNotCreated = secondUser.extract().path("success");
             String message = secondUser.extract().path("message");
             int statusCode = secondUser.extract().statusCode();
@@ -91,9 +88,7 @@ public class CreateUserTests {
                     .password(RandomStringUtils.randomAlphabetic(10))
                     .name(RandomStringUtils.randomAlphabetic(10))
                     .build();
-
             ValidatableResponse response = userClient.userCreate(user);
-
             boolean isNotCreated = response.extract().path("success");
             String message = response.extract().path("message");
             int statusCode = response.extract().statusCode();
@@ -110,9 +105,7 @@ public class CreateUserTests {
                     .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
                     .name(RandomStringUtils.randomAlphabetic(10))
                     .build();
-
             ValidatableResponse response = userClient.userCreate(user);
-
             boolean isNotCreated = response.extract().path("success");
             String message = response.extract().path("message");
             int statusCode = response.extract().statusCode();
@@ -129,9 +122,7 @@ public class CreateUserTests {
                     .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
                     .password(RandomStringUtils.randomAlphabetic(10))
                     .build();
-
             ValidatableResponse response = userClient.userCreate(user);
-
             boolean isNotCreated = response.extract().path("success");
             String message = response.extract().path("message");
             int statusCode = response.extract().statusCode();

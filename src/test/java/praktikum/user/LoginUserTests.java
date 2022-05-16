@@ -6,20 +6,21 @@ import io.restassured.response.ValidatableResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import praktikum.BaseTest;
 import praktikum.client.UserClient;
 import praktikum.data.User;
 import praktikum.data.UserCredentials;
 import static org.junit.Assert.*;
 
-public class LoginUserTests {
+public class LoginUserTests extends BaseTest {
+    private static UserClient userClient;
+    private static User user;
+    private static String accessToken;
 
-        private UserClient userClient;
-        private User user;
-        private String accessToken;
-
-        @Before
-        public void setUp() {
+    @BeforeClass
+    public static void SetUp() {
             userClient = new UserClient();
             user = User.getRandom();
             ValidatableResponse response = userClient.userCreate(user);
@@ -35,7 +36,7 @@ public class LoginUserTests {
         @DisplayName("Validation test")
         @Description("Basic validation test with credentials {email and password}")
         public void validationTest() {
-            ValidatableResponse response = userClient.validation(UserCredentials.from(user));
+            ValidatableResponse response = userClient.authorization(UserCredentials.from(user));
             int statusCode = response.extract().statusCode();
             boolean isValidated = response.extract().path("success");
             assertEquals("Incorrect status code",200, statusCode);
@@ -50,7 +51,7 @@ public class LoginUserTests {
                     .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
                     .password(user.getPassword())
                     .build();
-            ValidatableResponse response = userClient.validation(credentials);
+            ValidatableResponse response = userClient.authorization(credentials);
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -67,7 +68,7 @@ public class LoginUserTests {
                     .email(user.getEmail())
                     .password(RandomStringUtils.randomAlphabetic(10))
                     .build();
-            ValidatableResponse response = userClient.validation(credentials);
+            ValidatableResponse response = userClient.authorization(credentials);
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -84,7 +85,7 @@ public class LoginUserTests {
                     .email(null)
                     .password(user.getPassword())
                     .build();
-            ValidatableResponse response = userClient.validation(credentials);
+            ValidatableResponse response = userClient.authorization(credentials);
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");
@@ -101,7 +102,7 @@ public class LoginUserTests {
                     .email(user.getEmail())
                     .password(null)
                     .build();
-            ValidatableResponse response = userClient.validation(credentials);
+            ValidatableResponse response = userClient.authorization(credentials);
             int statusCode = response.extract().statusCode();
             boolean isNotValidated = response.extract().path("success");
             String message = response.extract().path("message");

@@ -4,8 +4,9 @@ import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import praktikum.BaseTest;
 import praktikum.client.Order;
 import praktikum.client.OrderClient;
 import praktikum.client.UserClient;
@@ -16,15 +17,15 @@ import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.*;
 
-public class CreateOrderTests {
-    private UserClient userClient;
-    private User user;
-    String accessToken;
-    private IngredientsForCreateNewBurger ingredientsForCreateNewBurger;
-    private OrderClient orderClient;
+public class CreateOrderTests extends BaseTest {
+    private static UserClient userClient;
+    private static User user;
+    private static String accessToken;
+    private static IngredientsForCreateNewBurger ingredientsForCreateNewBurger;
+    private static OrderClient orderClient;
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void SetUp() {
         orderClient = new OrderClient();
         userClient = new UserClient();
         //Сгенерировать случайные данные полей

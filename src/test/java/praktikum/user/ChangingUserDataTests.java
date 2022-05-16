@@ -5,24 +5,26 @@ import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import praktikum.BaseTest;
 import praktikum.client.UserClient;
 import praktikum.data.User;
 import praktikum.data.UserCredentials;
 import static org.junit.Assert.*;
 
-public class ChangingUserDataTests {
-        private User user;
-        private UserClient userClient;
-        private ValidatableResponse response;
-        private String accessToken;
+public class ChangingUserDataTests extends BaseTest {
+    private static User user;
+    private static UserClient userClient;
+    private static ValidatableResponse response;
+    private static String accessToken;
 
-        @Before
-        public void setUp() {
+    @BeforeClass
+    public static void SetUp() {
             userClient = new UserClient();
             user = User.getRandom();
             response = userClient.userCreate(user);
-            userClient.validation(UserCredentials.from(user));
+            userClient.authorization(UserCredentials.from(user));
             accessToken = response.extract().path("accessToken").toString().substring(7);
         }
 

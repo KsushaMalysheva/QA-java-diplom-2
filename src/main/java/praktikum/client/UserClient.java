@@ -22,7 +22,7 @@ public class UserClient extends RestAssuredClient {
     }
 
     @Step("Authorization user")
-    public ValidatableResponse validation(UserCredentials credentials) {
+    public ValidatableResponse authorization(UserCredentials credentials) {
         return given()
                 .spec(getBaseSpec())
                 .body(credentials)

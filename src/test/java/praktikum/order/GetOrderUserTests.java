@@ -5,7 +5,9 @@ import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import praktikum.BaseTest;
 import praktikum.client.Order;
 import praktikum.client.OrderClient;
 import praktikum.client.UserClient;
@@ -14,17 +16,17 @@ import java.util.Collections;
 import java.util.List;
 import static org.junit.Assert.*;
 
-public class GetOrderUserTests {
+public class GetOrderUserTests extends BaseTest {
 
-    private OrderClient orderClient;
-    private UserClient userClient;
-    private User user;
-    private String accessToken;
-    private ValidatableResponse responseOrder;
-    private String firstIngredient;
+    private static OrderClient orderClient;
+    private static UserClient userClient;
+    private static User user;
+    private static String accessToken;
+    private static ValidatableResponse responseOrder;
+    private static String firstIngredient;
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void SetUp() {
         orderClient = new OrderClient();
         userClient = new UserClient();
         user = User.getRandom();
