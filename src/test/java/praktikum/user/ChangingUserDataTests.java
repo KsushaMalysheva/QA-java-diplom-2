@@ -4,7 +4,6 @@ import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import praktikum.BaseTest;
@@ -37,14 +36,17 @@ public class ChangingUserDataTests extends BaseTest {
         @DisplayName("Changing user")
         @Description("Getting information about user")
         public void getUserDataTest() {
+            user = User.getRandom();
             userClient.gettingInformationUser(accessToken);
+            response = userClient.userCreate(user);
+            userClient.authorization(UserCredentials.from(user));
             int statusCode = response.extract().statusCode();
             boolean isGeted= response.extract().path("success");
             String userEmail = response.extract().path("user.email");
             String userName = response.extract().path("user.name");
             assertEquals("Incorrect status code",200, statusCode);
             assertTrue("Information doesn't get",isGeted);
-            assertEquals("User email doesn't match", user.getEmail(), userEmail);
+            assertEquals("User email doesn't match", user.getEmail().toLowerCase(), userEmail);
             assertEquals("User name doesn't match", user.getName(), userName);
         }
 
@@ -128,10 +130,10 @@ public class ChangingUserDataTests extends BaseTest {
                     .password(user.getPassword())
                     .name(user.getName())
                     .build();
-            userClient.changeInformationUserWithToken(accessToken, newUser);
-            int statusCode = response.extract().statusCode();
-            boolean isNotChanged = response.extract().path("success");
-            String message = response.extract().path("message");
+            ValidatableResponse response1 = userClient.changeInformationUserWithToken(accessToken, newUser);
+            int statusCode = response1.extract().statusCode();
+            boolean isNotChanged = response1.extract().path("success");
+            String message = response1.extract().path("message");
             assertEquals("Incorrect status code", 403, statusCode);
             assertFalse("Information was changed",isNotChanged);
             assertEquals("User with such email already exists", message);

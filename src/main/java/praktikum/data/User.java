@@ -1,7 +1,5 @@
 package praktikum.data;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.github.javafaker.Faker;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
 import lombok.Builder;

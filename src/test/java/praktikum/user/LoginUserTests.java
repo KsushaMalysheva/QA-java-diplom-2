@@ -5,7 +5,6 @@ import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import praktikum.BaseTest;
@@ -22,9 +21,6 @@ public class LoginUserTests extends BaseTest {
     @BeforeClass
     public static void SetUp() {
             userClient = new UserClient();
-            user = User.getRandom();
-            ValidatableResponse response = userClient.userCreate(user);
-            accessToken = response.extract().path("accessToken").toString().substring(7);
         }
 
         @After
@@ -36,9 +32,12 @@ public class LoginUserTests extends BaseTest {
         @DisplayName("Validation test")
         @Description("Basic validation test with credentials {email and password}")
         public void validationTest() {
-            ValidatableResponse response = userClient.authorization(UserCredentials.from(user));
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+            accessToken = response.extract().path("accessToken").toString().substring(7);
             int statusCode = response.extract().statusCode();
-            boolean isValidated = response.extract().path("success");
+            ValidatableResponse responseAuthorization = userClient.authorization(UserCredentials.from(user));
+            boolean isValidated = responseAuthorization.extract().path("success");
             assertEquals("Incorrect status code",200, statusCode);
             assertTrue("User not validated", isValidated);
         }
@@ -47,14 +46,17 @@ public class LoginUserTests extends BaseTest {
         @DisplayName("Validation test with incorrect credential {email}")
         @Description("Basic validation test with incorrect email")
         public void validationWithWrongEmailTest() {
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+            accessToken = response.extract().path("accessToken").toString().substring(7);
             UserCredentials credentials = UserCredentials.builder()
                     .email(RandomStringUtils.randomAlphabetic(10) + "@testdata.com")
                     .password(user.getPassword())
                     .build();
-            ValidatableResponse response = userClient.authorization(credentials);
-            int statusCode = response.extract().statusCode();
-            boolean isNotValidated = response.extract().path("success");
-            String message = response.extract().path("message");
+            ValidatableResponse responseAuthorization = userClient.authorization(credentials);
+            int statusCode = responseAuthorization.extract().statusCode();
+            boolean isNotValidated = responseAuthorization.extract().path("success");
+            String message = responseAuthorization.extract().path("message");
             assertEquals("Incorrect status code",401, statusCode);
             assertFalse("User was validated",isNotValidated);
             assertEquals("Error message doesn't match","email or password are incorrect", message);
@@ -64,14 +66,17 @@ public class LoginUserTests extends BaseTest {
         @DisplayName("Validation test with incorrect credential {password}")
         @Description("Basic validation test with incorrect password")
         public void validationWithWrongPasswordTest() {
+            user = User.getRandom();
+            ValidatableResponse response = userClient.userCreate(user);
+            accessToken = response.extract().path("accessToken").toString().substring(7);
             UserCredentials credentials = UserCredentials.builder()
                     .email(user.getEmail())
                     .password(RandomStringUtils.randomAlphabetic(10))
                     .build();
-            ValidatableResponse response = userClient.authorization(credentials);
-            int statusCode = response.extract().statusCode();
-            boolean isNotValidated = response.extract().path("success");
-            String message = response.extract().path("message");
+            ValidatableResponse responseAuthorization = userClient.authorization(credentials);
+            int statusCode = responseAuthorization.extract().statusCode();
+            boolean isNotValidated = responseAuthorization.extract().path("success");
+            String message = responseAuthorization.extract().path("message");
             assertEquals("Incorrect status code",401, statusCode);
             assertFalse("User was validated",isNotValidated);
             assertEquals("Error message doesn't match","email or password are incorrect", message);
